@@ -13,13 +13,6 @@ import java.time.Instant;
 
 public class Helper implements HttpFunction {
 
-//    public static void main(String[] args) {
-//        // took avg 4500 ms for 2.000.000 chunks
-//        measureStandardMerkleTree("test.txt", 8);
-//        // took avg 2300 ms for 2.000.000 chunks
-//        measureParallelMerkleTree("test.txt", 8);
-//    }
-
     public static void measureParallelMerkleTree(String inputFile, int chunkSize) {
         try {
             byte[][] dataBytes = parseData(inputFile, chunkSize);
