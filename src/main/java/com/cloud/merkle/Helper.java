@@ -1,23 +1,24 @@
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+package com.cloud.merkle;
+
+import com.google.cloud.functions.HttpFunction;
+import com.google.cloud.functions.HttpRequest;
+import com.google.cloud.functions.HttpResponse;
+
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.LinkedList;
 
-public class Helper {
+public class Helper implements HttpFunction {
 
-    public static void main(String[] args) {
-        // took avg 4500 ms for 2.000.000 chunks
-        measureStandardMerkleTree("test.txt", 8);
-        // took avg 2300 ms for 2.000.000 chunks
-        measureParallelMerkleTree("test.txt", 8);
-    }
+//    public static void main(String[] args) {
+//        // took avg 4500 ms for 2.000.000 chunks
+//        measureStandardMerkleTree("test.txt", 8);
+//        // took avg 2300 ms for 2.000.000 chunks
+//        measureParallelMerkleTree("test.txt", 8);
+//    }
 
     public static void measureParallelMerkleTree(String inputFile, int chunkSize) {
         try {
@@ -104,6 +105,26 @@ public class Helper {
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();
+        }
+    }
+
+    @Override
+    public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
+        BufferedWriter writer = httpResponse.getWriter();
+        try {
+            byte[][] dataBytes = new byte[2000][8];
+            for (int i = 0; i < 2000; i++) {
+                dataBytes[i] = strToBytes("Test non");
+            }
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            Instant start = Instant.now();
+            byte[][] hashBatch = hashData(dataBytes, md);
+            byte[][][] tree = MerkleTree.generateMerkleTree(hashBatch, md);
+            Instant end = Instant.now();
+            writer.write(String.valueOf(Duration.between(start,end).toMillis()));
+        }
+        catch (NoSuchAlgorithmException ae) {
+            writer.write("SHA-256 not supported");
         }
     }
 }
