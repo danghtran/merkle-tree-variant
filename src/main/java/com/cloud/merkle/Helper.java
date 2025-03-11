@@ -3,6 +3,9 @@ package com.cloud.merkle;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -103,21 +106,15 @@ public class Helper implements HttpFunction {
 
     @Override
     public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
-        BufferedWriter writer = httpResponse.getWriter();
-        try {
-            byte[][] dataBytes = new byte[2000][8];
-            for (int i = 0; i < 2000; i++) {
-                dataBytes[i] = strToBytes("Test non");
-            }
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            Instant start = Instant.now();
-            byte[][] hashBatch = hashData(dataBytes, md);
-            byte[][][] tree = MerkleTree.generateMerkleTree(hashBatch, md);
-            Instant end = Instant.now();
-            writer.write(String.valueOf(Duration.between(start,end).toMillis()));
+        Storage storage = StorageOptions.getDefaultInstance().getService();
+        Blob blob = storage.get("run-sources-protean-music-381914-us-central1", "data/standard/test.txt");
+        if (blob == null) {
+            httpResponse.getWriter().write("File not found.");
+            return;
         }
-        catch (NoSuchAlgorithmException ae) {
-            writer.write("SHA-256 not supported");
-        }
+        byte[] b = new byte[8];
+        System.arraycopy(blob.getContent(), 0, b, 0, 8);
+        String t = encodeHexString(b);
+        httpResponse.getWriter().write(t);
     }
 }
