@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public class TaskDivider implements HttpFunction {
-    public int[] divideTask() {
+    public int[][] divideTask() {
         Storage storage = StorageOptions.getDefaultInstance().getService();
         Blob blob = storage.get("run-sources-protean-music-381914-us-central1", "data/standard/test.txt");
         if (blob == null) {
@@ -23,10 +23,16 @@ public class TaskDivider implements HttpFunction {
         long raw = blob.getSize();
 
         // scan 1st chunk each chunk is 3200000 bytes)
-        int[] res = new int[3];
-        res[0] = 0; //offset
-        res[1] = 800; // nodes
-        res[1] = 4000; // chunk size
+        int[][] res = new int[2][3];
+        res[0][0] = 0; //offset
+        res[0][1] = 800; // nodes
+        res[0][2] = 4000; // chunk size
+
+        // scan 2nd chunk each chunk is 3200000 bytes)
+        res[1][0] = 800 * 4000; //offset
+        res[1][1] = 800; // nodes
+        res[1][2] = 4000; // chunk size
+
         return res;
     }
 
@@ -58,11 +64,14 @@ public class TaskDivider implements HttpFunction {
 
     @Override
     public void service(com.google.cloud.functions.HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
-        Task task = createHttpTask(divideTask());
-        if (task == null) {
-            httpResponse.getWriter().write("Failed to create tasks");
-        } else {
-            httpResponse.getWriter().write("Created tasks");
+        int[][] tasks = divideTask();
+        for (int i = 0; i < tasks.length; i++) {
+            Task task = createHttpTask(tasks[i]);
+            if (task == null) {
+                httpResponse.getWriter().write("Failed to create tasks\n");
+            } else {
+                httpResponse.getWriter().write("Created tasks\n");
+            }
         }
     }
 }
