@@ -62,7 +62,7 @@
 				<artifactId>function-maven-plugin</artifactId>
 				<version>0.11.0</version>
 				<configuration>
-					<functionTarget>com.cloud.merkle.Helper</functionTarget>
+					<functionTarget>com.cloud.merkle.TaskDivider</functionTarget>
 				</configuration>
 			</plugin>
 		</plugins>

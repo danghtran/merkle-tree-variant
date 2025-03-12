@@ -37,7 +37,7 @@ public class TaskDivider implements HttpFunction {
             // Create HTTP Request for the task
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .setUrl("https://merkle-tree-variant-812821988920.us-central1.run.app")
-                    .setHttpMethod(HttpMethod.GET)
+                    .setHttpMethod(HttpMethod.POST)
                     .setBody(ByteString.copyFrom(
                             String.format("%d,%d,%d", body[0], body[1], body[2])
                                     .getBytes(StandardCharsets.UTF_8)))
