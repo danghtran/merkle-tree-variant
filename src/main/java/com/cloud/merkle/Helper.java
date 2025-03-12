@@ -34,14 +34,6 @@ public class Helper implements HttpFunction {
         }
     }
 
-    public static byte[][] hashData(byte[][] dataChunks, MessageDigest md) {
-        byte[][] hashBatch = new byte[dataChunks.length][32];
-        for (int i = 0; i < dataChunks.length; i++) {
-            hashBatch[i] = md.digest(dataChunks[i]);
-        }
-        return hashBatch;
-    }
-
     public static byte[] strToBytes(String str) {
         return str.getBytes(StandardCharsets.UTF_8);
     }
@@ -69,25 +61,18 @@ public class Helper implements HttpFunction {
             httpResponse.getWriter().write("File not found.");
             return;
         }
-        byte[][] data = new byte[2000000][8];
+        byte[][] data = new byte[1000000][16];
         byte[] raw = blob.getContent();
 
-        for (int i = 0; i < 2000000; i++) {
-            System.arraycopy(raw, i*8, data[i], 0, 8);
+        for (int i = 0; i < 1000000; i++) {
+            System.arraycopy(raw, i*16, data[i], 0, 8);
         }
 
-        try {
-            httpResponse.getWriter().write("Parallel");
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            Instant start = Instant.now();
-            byte[][] hashBatch = hashData(data, md);
-            byte[][][] tree = ParallelMerkleTree.generateMerkleTree(hashBatch);
-            Instant end = Instant.now();
-            httpResponse.getWriter().write(String.valueOf(Duration.between(start,end).toMillis()));
-        }
-        catch (NoSuchAlgorithmException ae) {
-            httpResponse.getWriter().write("SHA-256 not supported");
-        }
+        httpResponse.getWriter().write("Parallel");
+        Instant s1 = Instant.now();
+        ParallelMerkleTree.generateMerkleTree(data);
+        Instant e1 = Instant.now();
+        httpResponse.getWriter().write(String.valueOf(Duration.between(s1,e1).toMillis()));
 
         httpResponse.getWriter().write("\n");
 
@@ -95,8 +80,7 @@ public class Helper implements HttpFunction {
             httpResponse.getWriter().write("Standard");
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             Instant start = Instant.now();
-            byte[][] hashBatch = hashData(data, md);
-            byte[][][] tree = MerkleTree.generateMerkleTree(hashBatch, md);
+            MerkleTree.generateMerkleTree(data, md);
             Instant end = Instant.now();
             httpResponse.getWriter().write(String.valueOf(Duration.between(start,end).toMillis()));
         }

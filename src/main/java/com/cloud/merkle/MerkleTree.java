@@ -76,10 +76,13 @@ public class MerkleTree {
         return -1;
     }
 
-    public static byte[][][] generateMerkleTree(byte[][] hashBatch, MessageDigest md) {
-        int n = (int) (Math.log(hashBatch.length) / Math.log(2)) + 1;
+    public static byte[][][] generateMerkleTree(byte[][] data, MessageDigest md) {
+        int n = (int) (Math.log(data.length) / Math.log(2)) + 1;
         byte[][][] tree = new byte[n][][];
-        tree[0] = hashBatch;
+        tree[0] = new byte[data.length][];
+        for (int i = 0; i < data.length; i++) {
+            tree[0][i] = md.digest(data[i]);
+        }
         for (int i = 1; i < n; i++) {
             // level i
             byte[][] hashToProcess = tree[i - 1];

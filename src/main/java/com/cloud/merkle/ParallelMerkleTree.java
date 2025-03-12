@@ -48,11 +48,52 @@ public class ParallelMerkleTree {
         }
     }
 
-    public static byte[][][] generateMerkleTree(byte[][] hashBatch) {
-        int n = (int) (Math.log(hashBatch.length) / Math.log(2)) + 1;
+    public static class HashTaskSingle extends RecursiveTask<ILinkedList<byte[]>> {
+        private static final int THRESHOLD = 1024;
+        private final byte[][] array;
+        private final int start;
+        private final int end;
+
+        HashTaskSingle(byte[][] array, int start, int end) {
+            this.array = array;
+            this.start = start;
+            this.end = end;
+        }
+
+        @Override
+        protected ILinkedList<byte[]> compute() {
+            if (end - start <= THRESHOLD) {
+                try {
+                    MessageDigest md = MessageDigest.getInstance("SHA-256");
+                    ILinkedList<byte[]> res = new ILinkedList<>();
+                    for (int i = start; i < end; i+=1) {
+                        res.addLast(md.digest(array[i]));
+                    }
+                    return res;
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+            }
+            int pairs = (end - start) / 2;
+            HashTaskSingle leftTask = new HashTaskSingle(array, start, start + (pairs / 2) * 2);
+            HashTaskSingle rightTask = new HashTaskSingle(array, start + (pairs / 2) * 2, end);
+
+            leftTask.fork();
+            ILinkedList<byte[]> right = rightTask.compute();
+            ILinkedList<byte[]> left = leftTask.join();
+            left.addAll(right);
+            return left;
+        }
+    }
+
+    public static byte[][][] generateMerkleTree(byte[][] data) {
+        int n = (int) (Math.log(data.length) / Math.log(2)) + 1;
         byte[][][] tree = new byte[n][][];
-        tree[0] = hashBatch;
         ForkJoinPool pool = ForkJoinPool.commonPool();
+        HashTaskSingle st = new HashTaskSingle(data, 0, data.length);
+        ILinkedList<byte[]> hr = pool.invoke(st);
+        tree[0] = new byte[hr.size][];
+        hr.toArray(tree[0]);
         for (int i = 1; i < n; i++) {
             // level i
             byte[][] hashToProcess = tree[i - 1];
