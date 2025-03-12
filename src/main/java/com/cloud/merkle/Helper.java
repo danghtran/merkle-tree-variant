@@ -3,9 +3,13 @@ package com.cloud.merkle;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.google.cloud.pubsub.v1.Publisher;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import com.google.protobuf.ByteString;
+import com.google.pubsub.v1.ProjectTopicName;
+import com.google.pubsub.v1.PubsubMessage;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -74,21 +78,25 @@ public class Helper implements HttpFunction {
             System.arraycopy(raw, offset + i*chunkSize, data[i], 0, chunkSize);
         }
 
-        httpResponse.getWriter().write("Parallel");
-        Instant s1 = Instant.now();
-        ParallelMerkleTree.generateMerkleTree(data);
-        Instant e1 = Instant.now();
-        httpResponse.getWriter().write(String.valueOf(Duration.between(s1,e1).toMillis()));
-
-        httpResponse.getWriter().write("\n");
-
         try {
             httpResponse.getWriter().write("Standard");
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             Instant start = Instant.now();
             MerkleTree.generateMerkleTree(data, md);
             Instant end = Instant.now();
-            httpResponse.getWriter().write(String.valueOf(Duration.between(start,end).toMillis()));
+            String time = String.valueOf(Duration.between(start,end).toMillis());
+            // Publish
+            ProjectTopicName topicName = ProjectTopicName.of("protean-music-381914", "merkle");
+            Publisher publisher = Publisher.newBuilder(topicName).build();
+
+            PubsubMessage pubsubMessage = PubsubMessage.newBuilder()
+                    .setData(ByteString.copyFromUtf8(time))
+                    .build();
+
+            // Publish the message to the topic
+            publisher.publish(pubsubMessage).get();
+            // Shutdown the publisher (important for cleanup)
+            publisher.shutdown();
         }
         catch (NoSuchAlgorithmException ae) {
             httpResponse.getWriter().write("SHA-256 not supported");
