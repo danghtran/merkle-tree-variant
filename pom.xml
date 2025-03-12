@@ -44,6 +44,11 @@
 			<artifactId>google-cloud-tasks</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>com.google.cloud</groupId>
+			<artifactId>google-cloud-pubsub</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -62,7 +67,7 @@
 				<artifactId>function-maven-plugin</artifactId>
 				<version>0.11.0</version>
 				<configuration>
-					<functionTarget>com.cloud.merkle.TaskDivider</functionTarget>
+					<functionTarget>com.cloud.merkle.TaskAggregator</functionTarget>
 				</configuration>
 			</plugin>
 		</plugins>

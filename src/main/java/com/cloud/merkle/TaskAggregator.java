@@ -1,5 +1,7 @@
 package com.cloud.merkle;
 
+import com.google.cloud.functions.BackgroundFunction;
+import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpResponse;
 import com.google.cloud.storage.Blob;
@@ -7,11 +9,15 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.cloud.tasks.v2.*;
 import com.google.protobuf.ByteString;
+import com.google.pubsub.v1.PubsubMessage;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
-public class TaskDivider implements HttpFunction {
+public class TaskAggregator implements BackgroundFunction<PubsubMessage> {
+    public static final List<Integer> count = new ArrayList<>();
     public int[] divideTask() {
         Storage storage = StorageOptions.getDefaultInstance().getService();
         Blob blob = storage.get("run-sources-protean-music-381914-us-central1", "data/standard/test.txt");
@@ -57,12 +63,15 @@ public class TaskDivider implements HttpFunction {
     }
 
     @Override
-    public void service(com.google.cloud.functions.HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
-        Task task = createHttpTask(divideTask());
-        if (task == null) {
-            httpResponse.getWriter().write("Failed to create tasks");
-        } else {
-            httpResponse.getWriter().write("Created tasks");
+    public void accept(PubsubMessage pubsubMessage, Context context) throws Exception {
+        synchronized (count) {
+            count.add(1);
+        }
+        System.out.println("Count size: " + count.size());
+        if (count.size() == 2) {
+            synchronized (count) {
+                count.clear();
+            }
         }
     }
 }
