@@ -16,6 +16,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 public class Helper implements HttpFunction {
 
@@ -61,11 +62,16 @@ public class Helper implements HttpFunction {
             httpResponse.getWriter().write("File not found.");
             return;
         }
-        byte[][] data = new byte[1000000][16];
+        String[] params = httpRequest.getReader().readLine().split(",");
+        int offset = Integer.parseInt(params[0]);
+        int nodes = Integer.parseInt(params[1]);
+        int chunkSize = Integer.parseInt(params[2]);
+
+        byte[][] data = new byte[nodes][chunkSize];
         byte[] raw = blob.getContent();
 
-        for (int i = 0; i < 1000000; i++) {
-            System.arraycopy(raw, i*16, data[i], 0, 8);
+        for (int i = 0; i < nodes; i++) {
+            System.arraycopy(raw, offset + i*chunkSize, data[i], 0, chunkSize);
         }
 
         httpResponse.getWriter().write("Parallel");
