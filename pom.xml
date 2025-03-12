@@ -13,6 +13,18 @@
 		<maven.compiler.target>11</maven.compiler.target>
 	</properties>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.google.cloud</groupId>
+				<artifactId>libraries-bom</artifactId>
+				<version>26.39.0</version> <!-- Latest libraries bom version -->
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<!-- Required for Function primitives -->
 		<dependency>
@@ -25,7 +37,11 @@
 		<dependency>
 			<groupId>com.google.cloud</groupId>
 			<artifactId>google-cloud-storage</artifactId>
-			<version>2.28.0</version> <!-- Check for latest version -->
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.cloud</groupId>
+			<artifactId>google-cloud-tasks</artifactId>
 		</dependency>
 
 	</dependencies>
