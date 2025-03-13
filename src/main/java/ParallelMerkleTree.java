@@ -46,14 +46,17 @@ public class ParallelMerkleTree {
         }
     }
 
-    public static byte[][][] generateMerkleTree(byte[][] hashBatch) {
-        int n = (int) (Math.log(hashBatch.length) / Math.log(2)) + 1;
-        byte[][][] tree = new byte[n][][];
-        tree[0] = hashBatch;
+    public static byte[] generateMerkleRoot(byte[][] data) throws NoSuchAlgorithmException {
+        byte[][] hashes = new byte[data.length][32];
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        for (int i = 0; i < data.length; i++) {
+            hashes[i] = md.digest(data[i]);
+        }
+        int n = (int) (Math.log(hashes.length) / Math.log(2)) + 1;
+        byte[][] hashToProcess = hashes;
         ForkJoinPool pool = ForkJoinPool.commonPool();
         for (int i = 1; i < n; i++) {
             // level i
-            byte[][] hashToProcess = tree[i - 1];
             HashTask task = new HashTask(hashToProcess, 0, hashToProcess.length);
             ILinkedList<byte[]> res = pool.invoke(task);
 
@@ -62,8 +65,8 @@ public class ParallelMerkleTree {
             }
             byte[][] lv = new byte[res.size][];
             res.toArray(lv);
-            tree[i] = lv;
+            hashToProcess = lv;
         }
-        return tree;
+        return hashToProcess[0];
     }
 }
