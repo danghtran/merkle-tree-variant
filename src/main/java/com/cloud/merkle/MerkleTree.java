@@ -1,6 +1,7 @@
 package com.cloud.merkle;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 public class MerkleTree {
@@ -76,16 +77,21 @@ public class MerkleTree {
         return -1;
     }
 
-    public static byte[][][] generateMerkleTree(byte[][] data, MessageDigest md) {
-        int n = (int) (Math.log(data.length) / Math.log(2)) + 1;
-        byte[][][] tree = new byte[n][][];
-        tree[0] = new byte[data.length][];
+    public static byte[] generateMerkleRoot(byte[][] data) throws NoSuchAlgorithmException {
+        byte[][] hashes = new byte[data.length][32];
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
         for (int i = 0; i < data.length; i++) {
-            tree[0][i] = md.digest(data[i]);
+            hashes[i] = md.digest(data[i]);
         }
-        for (int i = 1; i < n; i++) {
+        int n = (int) (Math.log(hashes.length) / Math.log(2)) + 1;
+        byte[][] hashToProcess = processLevels(hashes, md, n);
+        return hashToProcess[0];
+    }
+
+    private static byte[][] processLevels(byte[][] hashes, MessageDigest md, int levels) {
+        byte[][] hashToProcess = hashes;
+        for (int i = 1; i < levels; i++) {
             // level i
-            byte[][] hashToProcess = tree[i - 1];
             byte[][] lv;
             if ((hashToProcess.length / 2) % 2 == 1) {
                 lv = new byte[hashToProcess.length / 2 + 1][32];
@@ -102,8 +108,22 @@ public class MerkleTree {
             if ((hashToProcess.length / 2) % 2 == 1) {
                 lv[lv.length - 1] = lv[lv.length - 2];
             }
-            tree[i] = lv;
+            hashToProcess = lv;
         }
-        return tree;
+        return hashToProcess;
+    }
+
+    public static byte[] generateMerkleRoot(byte[][] hashBatch, int level) throws NoSuchAlgorithmException {
+        int n = (int) (Math.log(hashBatch.length) / Math.log(2)) + 1;
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        byte[][] hashToProcess = processLevels(hashBatch, md, n);
+        while (n < level) {
+            byte[] merged = new byte[64];
+            System.arraycopy(hashToProcess[0], 0, merged, 0, 32);
+            System.arraycopy(hashToProcess[0], 0, merged, 32, 32);
+            hashToProcess[0] = md.digest(merged);
+            n++;
+        }
+        return hashToProcess[0];
     }
 }
