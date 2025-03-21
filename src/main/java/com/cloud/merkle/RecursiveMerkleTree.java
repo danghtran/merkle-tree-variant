@@ -11,12 +11,13 @@ import java.util.concurrent.RecursiveTask;
 public class RecursiveMerkleTree {
     // only store the root node of partial trees
     public static class PartialTreeTask extends RecursiveTask<byte[]> {
-        private static final int THRESHOLD = 1024; // 1024 nodes for each partial tree
+        private final int threshold; // 1024 nodes for each partial tree
         private final int level;
         private final byte[][] array;
 
-        PartialTreeTask(byte[][] array, int level) {
+        PartialTreeTask(byte[][] array, int level, int threshold) {
             this.array = array;
+            this.threshold = threshold;
             if (level != 0) {
                 this.level =  level;
             } else {
@@ -26,7 +27,7 @@ public class RecursiveMerkleTree {
         }
         @Override
         protected byte[] compute() {
-            if (array.length <= THRESHOLD) {
+            if (array.length <= threshold) {
                 // calculate directly with Standard Merkle Tree
                 try {
                     return MerkleTree.generateMerkleRoot(array, level);
@@ -36,39 +37,43 @@ public class RecursiveMerkleTree {
             }
             // 512 pairs for each sub tree
             List<PartialTreeTask> tasks = new ArrayList<>();
-            int lv = (int) (Math.log(THRESHOLD) / Math.log(2)) + 1;
+            int lv = (int) (Math.log(threshold) / Math.log(2)) + 1;
             int size = array.length;
             int offset = 0;
             while (size > 0) {
                 byte[][] sub;
-                if (size < THRESHOLD) {
+                if (size < threshold) {
                     sub = new byte[size][32];
                 } else {
-                    sub = new byte[THRESHOLD][32];
+                    sub = new byte[threshold][32];
                 }
                 System.arraycopy(array, offset, sub, 0, sub.length);
-                tasks.add(new PartialTreeTask(sub, lv));
-                size -= THRESHOLD;
-                offset += THRESHOLD;
+                tasks.add(new PartialTreeTask(sub, lv, threshold));
+                size -= threshold;
+                offset += threshold;
             }
             tasks.forEach(ForkJoinTask::fork);
             byte[][] res = new byte[tasks.size()][32];
             for (int i = 0; i < tasks.size(); i++) {
                 res[i] = tasks.get(i).join();
             }
-            PartialTreeTask finalTask = new PartialTreeTask(res, 0);
+            PartialTreeTask finalTask = new PartialTreeTask(res, 0, threshold);
             return finalTask.compute();
         }
     }
 
-    public static byte[] generateMerkleRoot(byte[][] data) throws NoSuchAlgorithmException {
+    public static byte[] genMerkleRootFromRaw(byte[][] data, int threshold) throws NoSuchAlgorithmException {
         byte[][] hashes = new byte[data.length][32];
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         for (int i = 0; i < data.length; i++) {
             hashes[i] = md.digest(data[i]);
         }
+        return genMerkleRootFromHash(hashes, threshold);
+    }
+
+    public static byte[] genMerkleRootFromHash(byte[][] hashes, int threshold) {
         ForkJoinPool pool = ForkJoinPool.commonPool();
-        PartialTreeTask task = new PartialTreeTask(hashes, 0);
+        PartialTreeTask task = new PartialTreeTask(hashes, 0, threshold);
         return pool.invoke(task);
     }
 }

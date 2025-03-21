@@ -77,12 +77,17 @@ public class MerkleTree {
         return -1;
     }
 
-    public static byte[] generateMerkleRoot(byte[][] data) throws NoSuchAlgorithmException {
+    public static byte[] genMerkleRootFromRaw(byte[][] data) throws NoSuchAlgorithmException {
         byte[][] hashes = new byte[data.length][32];
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         for (int i = 0; i < data.length; i++) {
             hashes[i] = md.digest(data[i]);
         }
+        return genMerkleRootFromHash(hashes);
+    }
+
+    public static byte[] genMerkleRootFromHash(byte[][] hashes) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
         int n = (int) (Math.log(hashes.length) / Math.log(2)) + 1;
         byte[][] hashToProcess = processLevels(hashes, md, n);
         return hashToProcess[0];

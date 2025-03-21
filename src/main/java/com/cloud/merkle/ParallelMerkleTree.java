@@ -8,20 +8,21 @@ import java.util.concurrent.RecursiveTask;
 public class ParallelMerkleTree {
 
     public static class HashTask extends RecursiveTask<ILinkedList<byte[]>> {
-        private static final int THRESHOLD = 1024;
+        private final int threshold;
         private final byte[][] array;
         private final int start;
         private final int end;
 
-        HashTask(byte[][] array, int start, int end) {
+        HashTask(byte[][] array, int start, int end, int threshold) {
             this.array = array;
             this.start = start;
             this.end = end;
+            this.threshold = threshold;
         }
 
         @Override
         protected ILinkedList<byte[]> compute() {
-            if (end - start <= THRESHOLD) {
+            if (end - start <= threshold) {
                 try {
                     MessageDigest md = MessageDigest.getInstance("SHA-256");
                     ILinkedList<byte[]> res = new ILinkedList<>();
@@ -37,8 +38,8 @@ public class ParallelMerkleTree {
                 }
             }
             int pairs = (end - start) / 2;
-            HashTask leftTask = new HashTask(array, start, start + (pairs / 2) * 2);
-            HashTask rightTask = new HashTask(array, start + (pairs / 2) * 2, end);
+            HashTask leftTask = new HashTask(array, start, start + (pairs / 2) * 2, threshold);
+            HashTask rightTask = new HashTask(array, start + (pairs / 2) * 2, end, threshold);
 
             leftTask.fork();
             ILinkedList<byte[]> right = rightTask.compute();
@@ -48,18 +49,22 @@ public class ParallelMerkleTree {
         }
     }
 
-    public static byte[] generateMerkleRoot(byte[][] data) throws NoSuchAlgorithmException {
+    public static byte[] genMerkleRootFromRaw(byte[][] data, int threshold) throws NoSuchAlgorithmException {
         byte[][] hashes = new byte[data.length][32];
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         for (int i = 0; i < data.length; i++) {
             hashes[i] = md.digest(data[i]);
         }
+        return genMerkleRootFromHash(hashes, threshold);
+    }
+
+    public static byte[] genMerkleRootFromHash(byte[][] hashes, int threshold) {
         int n = (int) (Math.log(hashes.length) / Math.log(2)) + 1;
         byte[][] hashToProcess = hashes;
         ForkJoinPool pool = ForkJoinPool.commonPool();
         for (int i = 1; i < n; i++) {
             // level i
-            HashTask task = new HashTask(hashToProcess, 0, hashToProcess.length);
+            HashTask task = new HashTask(hashToProcess, 0, hashToProcess.length, threshold);
             ILinkedList<byte[]> res = pool.invoke(task);
 
             if ((hashToProcess.length / 2) % 2 == 1) {
