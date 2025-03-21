@@ -11,7 +11,7 @@ import java.util.concurrent.RecursiveTask;
 public class RecursiveMerkleTree {
     // only store the root node of partial trees
     public static class PartialTreeTask extends RecursiveTask<byte[]> {
-        private static final int THRESHOLD = 1024; // 1024 nodes for each partial tree
+        private static final int THRESHOLD = 256; // 1024 nodes for each partial tree
         private final int level;
         private final byte[][] array;
 
@@ -61,12 +61,7 @@ public class RecursiveMerkleTree {
         }
     }
 
-    public static byte[] generateMerkleRoot(byte[][] data) throws NoSuchAlgorithmException {
-        byte[][] hashes = new byte[data.length][32];
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        for (int i = 0; i < data.length; i++) {
-            hashes[i] = md.digest(data[i]);
-        }
+    public static byte[] generateMerkleRoot(byte[][] hashes) throws NoSuchAlgorithmException {
         ForkJoinPool pool = ForkJoinPool.commonPool();
         PartialTreeTask task = new PartialTreeTask(hashes, 0);
         return pool.invoke(task);
