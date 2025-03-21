@@ -15,16 +15,16 @@ import java.time.Duration;
 import java.time.Instant;
 
 public class Helper implements HttpFunction {
-    public static long measureRecursiveMerkleTree(byte[][] data) throws NoSuchAlgorithmException {
+    public static long measureRecursiveMerkleTree(byte[][] data, int threshold) throws NoSuchAlgorithmException {
         Instant start = Instant.now();
-        byte[] root = RecursiveMerkleTree.genMerkleRootFromRaw(data, 1024);
+        byte[] root = RecursiveMerkleTree.genMerkleRootFromRaw(data, threshold);
         Instant end = Instant.now();
         return Duration.between(start,end).toMillis();
     }
 
-    public static long measureParallelMerkleTree(byte[][] data) throws NoSuchAlgorithmException {
+    public static long measureParallelMerkleTree(byte[][] data, int threshold) throws NoSuchAlgorithmException {
         Instant start = Instant.now();
-        byte[] root = ParallelMerkleTree.genMerkleRootFromRaw(data, 1024);
+        byte[] root = ParallelMerkleTree.genMerkleRootFromRaw(data, threshold);
         Instant end = Instant.now();
         return Duration.between(start,end).toMillis();
     }
@@ -79,9 +79,12 @@ public class Helper implements HttpFunction {
             }
             byte[][] data = new byte[nodes.size][];
             nodes.toArray(data);
+            int threshold = httpRequest.getFirstQueryParameter("threshold")
+                    .map(Integer::parseInt)
+                    .orElse(1024);
             httpResponse.getWriter().write(String.format("Standard: %d\n", measureStandardMerkleTree(data)));
-            httpResponse.getWriter().write(String.format("Parallel: %d\n", measureParallelMerkleTree(data)));
-            httpResponse.getWriter().write(String.format("Recursive: %d\n", measureRecursiveMerkleTree(data)));
+            httpResponse.getWriter().write(String.format("Parallel: %d\n", measureParallelMerkleTree(data, threshold)));
+            httpResponse.getWriter().write(String.format("Recursive: %d\n", measureRecursiveMerkleTree(data, threshold)));
         } catch (NoSuchAlgorithmException ae) {
             httpResponse.getWriter().write("SHA-256 not supported");
         }
