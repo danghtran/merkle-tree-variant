@@ -74,6 +74,7 @@ public class Helper implements HttpFunction {
         int threshold = httpRequest.getFirstQueryParameter("threshold")
                 .map(Integer::parseInt)
                 .orElse(1024);
+        long result = 0;
         for (int i=1; i<=fileNum; i++){
             Blob blob = storage.get("run-sources-protean-music-381914-us-central1", String.format("data/standard/test%d.txt", i));
             if (blob == null) {
@@ -90,15 +91,16 @@ public class Helper implements HttpFunction {
                 byte[][] data = new byte[nodes.size][];
                 nodes.toArray(data);
                 if (mode == 0) {
-                    httpResponse.getWriter().write(String.format("Standard: %d\n", measureStandardMerkleTree(data)));
+                    result += measureStandardMerkleTree(data);
                 } else if (mode == 1) {
-                    httpResponse.getWriter().write(String.format("Parallel: %d\n", measureParallelMerkleTree(data, threshold)));
+                    result += measureParallelMerkleTree(data, threshold);
                 } else if (mode == 2) {
-                    httpResponse.getWriter().write(String.format("Recursive: %d\n", measureRecursiveMerkleTree(data, threshold)));
+                    result += measureRecursiveMerkleTree(data, threshold);
                 }
             } catch (NoSuchAlgorithmException ae) {
                 httpResponse.getWriter().write("SHA-256 not supported");
             }
         }
+        httpResponse.getWriter().write(String.format("Result: %d", result));
     }
 }
