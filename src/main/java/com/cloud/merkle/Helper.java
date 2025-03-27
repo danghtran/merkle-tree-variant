@@ -65,7 +65,16 @@ public class Helper implements HttpFunction {
     @Override
     public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
         Storage storage = StorageOptions.getDefaultInstance().getService();
-        for (int i=1; i<=5; i++){
+        int fileNum = httpRequest.getFirstQueryParameter("file")
+                .map(Integer::parseInt)
+                .orElse(1);
+        int mode = httpRequest.getFirstQueryParameter("mode")
+                .map(Integer::parseInt)
+                .orElse(0);
+        int threshold = httpRequest.getFirstQueryParameter("threshold")
+                .map(Integer::parseInt)
+                .orElse(1024);
+        for (int i=1; i<=fileNum; i++){
             Blob blob = storage.get("run-sources-protean-music-381914-us-central1", String.format("data/standard/test%d.txt", i));
             if (blob == null) {
                 httpResponse.getWriter().write("File not found.");
@@ -80,12 +89,13 @@ public class Helper implements HttpFunction {
                 }
                 byte[][] data = new byte[nodes.size][];
                 nodes.toArray(data);
-                int threshold = httpRequest.getFirstQueryParameter("threshold")
-                        .map(Integer::parseInt)
-                        .orElse(1024);
-//                httpResponse.getWriter().write(String.format("Standard: %d\n", measureStandardMerkleTree(data)));
-//                httpResponse.getWriter().write(String.format("Parallel: %d\n", measureParallelMerkleTree(data, threshold)));
-                httpResponse.getWriter().write(String.format("Recursive: %d\n", measureRecursiveMerkleTree(data, threshold)));
+                if (mode == 0) {
+                    httpResponse.getWriter().write(String.format("Standard: %d\n", measureStandardMerkleTree(data)));
+                } else if (mode == 1) {
+                    httpResponse.getWriter().write(String.format("Parallel: %d\n", measureParallelMerkleTree(data, threshold)));
+                } else if (mode == 2) {
+                    httpResponse.getWriter().write(String.format("Recursive: %d\n", measureRecursiveMerkleTree(data, threshold)));
+                }
             } catch (NoSuchAlgorithmException ae) {
                 httpResponse.getWriter().write("SHA-256 not supported");
             }
