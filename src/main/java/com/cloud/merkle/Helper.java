@@ -65,28 +65,30 @@ public class Helper implements HttpFunction {
     @Override
     public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
         Storage storage = StorageOptions.getDefaultInstance().getService();
-        Blob blob = storage.get("run-sources-protean-music-381914-us-central1", "data/standard/test1.txt");
-        if (blob == null) {
-            httpResponse.getWriter().write("File not found.");
-            return;
-        }
-
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(Channels.newInputStream(blob.reader())))) {
-            String line;
-            ILinkedList<byte[]> nodes = new ILinkedList<>();
-            while ((line = br.readLine()) != null) {
-                nodes.addLast(line.getBytes(StandardCharsets.UTF_8));
+        for (int i=1; i<=5; i++){
+            Blob blob = storage.get("run-sources-protean-music-381914-us-central1", String.format("data/standard/test%d.txt", i));
+            if (blob == null) {
+                httpResponse.getWriter().write("File not found.");
+                return;
             }
-            byte[][] data = new byte[nodes.size][];
-            nodes.toArray(data);
-            int threshold = httpRequest.getFirstQueryParameter("threshold")
-                    .map(Integer::parseInt)
-                    .orElse(1024);
-            httpResponse.getWriter().write(String.format("Standard: %d\n", measureStandardMerkleTree(data)));
-            httpResponse.getWriter().write(String.format("Parallel: %d\n", measureParallelMerkleTree(data, threshold)));
-            httpResponse.getWriter().write(String.format("Recursive: %d\n", measureRecursiveMerkleTree(data, threshold)));
-        } catch (NoSuchAlgorithmException ae) {
-            httpResponse.getWriter().write("SHA-256 not supported");
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(Channels.newInputStream(blob.reader())))) {
+                String line;
+                ILinkedList<byte[]> nodes = new ILinkedList<>();
+                while ((line = br.readLine()) != null) {
+                    nodes.addLast(line.getBytes(StandardCharsets.UTF_8));
+                }
+                byte[][] data = new byte[nodes.size][];
+                nodes.toArray(data);
+                int threshold = httpRequest.getFirstQueryParameter("threshold")
+                        .map(Integer::parseInt)
+                        .orElse(1024);
+//                httpResponse.getWriter().write(String.format("Standard: %d\n", measureStandardMerkleTree(data)));
+//                httpResponse.getWriter().write(String.format("Parallel: %d\n", measureParallelMerkleTree(data, threshold)));
+                httpResponse.getWriter().write(String.format("Recursive: %d\n", measureRecursiveMerkleTree(data, threshold)));
+            } catch (NoSuchAlgorithmException ae) {
+                httpResponse.getWriter().write("SHA-256 not supported");
+            }
         }
     }
 }
