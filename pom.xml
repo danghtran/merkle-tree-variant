@@ -7,6 +7,7 @@
 	<groupId>com.cloud</groupId>
 	<artifactId>merkle</artifactId>
 	<version>1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
 
 	<properties>
 		<maven.compiler.source>11</maven.compiler.source>
@@ -19,6 +20,13 @@
 				<groupId>com.google.cloud</groupId>
 				<artifactId>libraries-bom</artifactId>
 				<version>26.39.0</version> <!-- Latest libraries bom version -->
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.beam</groupId>
+				<artifactId>beam-sdks-java-google-cloud-platform-bom</artifactId>
+				<version>2.63.0</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -49,7 +57,45 @@
 			<artifactId>google-cloud-pubsub</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.beam</groupId>
+			<artifactId>beam-sdks-java-core</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.beam</groupId>
+			<artifactId>beam-runners-direct-java</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.beam</groupId>
+			<artifactId>beam-runners-google-cloud-dataflow-java</artifactId>
+			<version>2.63.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>2.0.17</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.cloud.dataflow</groupId>
+			<artifactId>google-cloud-dataflow-java-sdk-all</artifactId>
+			<version>2.5.0</version>
+		</dependency>
+
 	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>dataflow-runner</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+		</profile>
+	</profiles>
 
 	<build>
 		<plugins>
@@ -68,6 +114,33 @@
 				<version>0.11.0</version>
 				<configuration>
 					<functionTarget>com.cloud.merkle.Helper</functionTarget>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>3.5.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>java</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<mainClass>com.cloud.merkle.DataFlowPipeline</mainClass>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.2.2</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>com.cloud.merkle.DataFlowPipeline</mainClass>
+						</manifest>
+					</archive>
 				</configuration>
 			</plugin>
 		</plugins>
