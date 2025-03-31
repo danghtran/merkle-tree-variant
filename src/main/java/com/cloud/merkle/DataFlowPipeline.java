@@ -70,15 +70,11 @@ public class DataFlowPipeline {
                     .sorted(Comparator.comparingInt(Node::getSeq))
                     .map(Node::getData)
                     .toArray(byte[][]::new);
-            try {
-                byte[] root = RecursiveMerkleTree.generateMerkleRoot(data);
-                Node res = new Node();
-                res.seq = c.element().getKey();
-                res.data = root;
-                c.output(res);
-            } catch (NoSuchAlgorithmException e) {
-
-            }
+            byte[] root = RecursiveMerkleTree.genMerkleRootFromHash(data, 512);
+            Node res = new Node();
+            res.seq = c.element().getKey();
+            res.data = root;
+            c.output(res);
         }
     }
 

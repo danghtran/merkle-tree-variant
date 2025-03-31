@@ -36,17 +36,6 @@ public class Helper implements HttpFunction {
         return Duration.between(start,end).toMillis();
     }
 
-    /***
-     * Parse data into uniform chunks (ideally each row is a chunk)
-     */
-    public static byte[][] parseData(byte[] input, int chunkSize) {
-        byte[][] dataBytes = new byte[input.length/ chunkSize][chunkSize];
-        for (int i = 0; i < dataBytes.length; i++) {
-            System.arraycopy(input, i * chunkSize, dataBytes[i], 0, chunkSize);
-        }
-        return dataBytes;
-    }
-
     public static String encodeHexString(byte[] byteArray) {
         StringBuilder hexStringBuffer = new StringBuilder();
         for (byte b : byteArray) {
