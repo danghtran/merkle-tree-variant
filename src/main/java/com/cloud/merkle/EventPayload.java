@@ -1,4 +1,4 @@
-package example;
+package com.cloud.merkle;
 
 public class EventPayload {
     public String fileName;

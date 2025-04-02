@@ -1,4 +1,4 @@
-package example;
+package com.cloud.merkle;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -86,41 +86,6 @@ public class Orchestrator {
                             .whenComplete((response, throwable) -> semaphore.release());
                 })
                 .toList();
-
-//        var futures = IntStream.range(0, workers)
-//                .mapToObj(i -> {
-//                    int skip = i * chunksPerWorker;
-//                    // Prepare JSON payload with appropriate "skip" and "take" values
-//                    String jsonPayload = String.format(
-//                            "{\"fileName\":\"%s\", \"chunkSize\":8, \"skip\":%d, \"take\":%d}",
-//                            fileName, skip, chunksPerWorker
-//                    );
-//
-//                    HttpRequest request = HttpRequest.newBuilder()
-//                            .uri(URI.create(LAMBDA_URL))
-//                            .header("Content-Type", "application/json")
-//                            .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
-//                            .build();
-//
-//                    // Create a CompletableFuture that:
-//                    // 1. Acquires a permit from the semaphore before sending the request.
-//                    // 2. Sends the request asynchronously.
-//                    // 3. Releases the permit when the request completes.
-//                    return CompletableFuture.runAsync(() -> {
-//                        try {
-//                            semaphore.acquire();
-//                            System.out.println(("acquried"));
-//                        } catch (InterruptedException e) {
-//                            throw new RuntimeException(e);
-//                        }
-//                    }).thenCompose(ignored ->
-//                            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-//                    ).thenApply(HttpResponse::body).whenComplete((response, throwable) -> {
-//                        semaphore.release();
-//                        System.out.println("released");
-//                    });
-//                })
-//                .toList();
 
         // Wait for all asynchronous calls to complete
         CompletableFuture<Void> allDone = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
