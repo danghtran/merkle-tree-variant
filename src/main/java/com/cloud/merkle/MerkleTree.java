@@ -2,7 +2,9 @@ package com.cloud.merkle;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class MerkleTree {
     public static byte[] genRootFromProof(byte[] hash, byte[][] proof, MessageDigest md) {
@@ -130,5 +132,48 @@ public class MerkleTree {
             n++;
         }
         return hashToProcess[0];
+    }
+
+    public static byte[][][] generateMerkleTree(byte[][] leaves, MessageDigest md) {
+        List<byte[][]> levels = new ArrayList<>();
+        levels.add(leaves);
+
+        byte[][] currentLevel = leaves;
+        while (currentLevel.length > 1) {
+            if (currentLevel.length % 2 == 1) {
+                currentLevel = duplicateLastNode(currentLevel);
+            }
+            byte[][] parentLevel = new byte[currentLevel.length / 2][md.getDigestLength()];
+            for (int i = 0; i < currentLevel.length; i += 2) {
+                byte[] merged = concat(currentLevel[i], currentLevel[i + 1]);
+                parentLevel[i / 2] = md.digest(merged);
+            }
+            levels.add(parentLevel);
+            currentLevel = parentLevel;
+        }
+
+        return convertTo3D(levels);
+    }
+
+    private static byte[][] duplicateLastNode(byte[][] level) {
+        byte[][] extended = new byte[level.length + 1][];
+        System.arraycopy(level, 0, extended, 0, level.length);
+        extended[level.length] = level[level.length - 1]; // duplicate last
+        return extended;
+    }
+
+    private static byte[] concat(byte[] a, byte[] b) {
+        byte[] merged = new byte[a.length + b.length];
+        System.arraycopy(a, 0, merged, 0, a.length);
+        System.arraycopy(b, 0, merged, a.length, b.length);
+        return merged;
+    }
+
+    public static byte[][][] convertTo3D(List<byte[][]> list) {
+        byte[][][] array = new byte[list.size()][][];
+        for (int i = 0; i < list.size(); i++) {
+            array[i] = list.get(i);
+        }
+        return array;
     }
 }
